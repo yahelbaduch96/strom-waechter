@@ -1,44 +1,78 @@
-# Strom-Wächter: AI:AT Challenge
+# Strom-Wächter (AI Developer Challenge - Phase A)
 
-Schön, dass du dabei bist. Dieses Repo enthält alles, was du zum Loslegen brauchst: Aufgabenstellung, Daten und (für die Dev-Rolle) das Code-Snippet.
+A terminal-based CLI tool for energy and cost optimization designed for industrial SMEs. It analyzes day-ahead electricity prices and calculates the most cost-efficient time windows for flexible loads based on machine-specific consumption profiles.
 
-> Das hier ist kein Trick-Test. Es ist ein kleines, echtes Stück Venture-Studio-Arbeit: mit KI schnell etwas Wertvolles bauen bzw. eine Idee auf Marktreife prüfen. Es gibt keine Musterlösung, die du treffen musst. Wir schauen, wie du ein unscharf spezifiziertes Problem zerlegst, Entscheidungen triffst und KI sinnvoll einsetzt.
+## 🚀 Quickstart
 
-## Das Szenario „Strom-Wächter"
+This project uses modern Python packaging (`pyproject.toml`). No manual script-path routing is required—it installs as a native global command.
 
-Energieintensive KMU in Österreich (Bäckereien, Kühlhäuser, Druckereien) zahlen Strom zu Day-ahead-Preisen, die sich stündlich stark unterscheiden: nachts oft halb so teuer wie zur Abendspitze. Wer verschiebbare Last (Teigkühlung, Gefrierzyklen, Druckläufe) in die günstigen Stunden legt, spart 5–15 % der Stromkosten, verpasst sie aber meist, weil niemand die Preiskurve im Blick hat. „Strom-Wächter" nimmt eine Tages-Preiskurve und ein Verbrauchsprofil und zeigt in Sekunden die günstigsten Lastfenster, die geschätzte Ersparnis und eine klare Handlungsempfehlung.
+```bash
+# 1. Clone the repository and navigate into the directory
+git clone <your-repo-link>
+cd strom-waechter
 
-## Wähle deine Challenge
+# 2. Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Mac/Linux
+# .venv\Scripts\activate   # Windows
 
-| Rolle | Worum geht's | Start hier |
-|---|---|---|
-| **AI Developer** | Bau den Strom-Wächter-PoC + ein kurzes Code-Review | 📂 [`dev/`](./dev/) |
-| **AI Business Analyst & Venture Builder** | Ist das ein Geschäft? Business Case + Go-to-Market | 📂 [`business/`](./business/) |
+# 3. Install the tool (automatically installs dependencies like Pandas & Rich)
+pip install -e .
 
-> Du weißt aus dem Gespräch mit uns, welche Rolle deine ist: leg einfach im passenden Ordner los. Falls unklar, welche Rolle deine ist, frag kurz per Mail nach. (Neugierig auf die andere Seite? Gern reinschauen. Für deine Abgabe zählt nur dein Ordner.)
+# 4. Run the tool!
+strom-waechter 1
 
-## Die Daten (`data/`)
 
-Beide Rollen teilen sich dieselbe Datengrundlage:
+*For a full list of available options, run: `strom-waechter --help`
 
-- [`data/prices.json`](./data/prices.json): eine 24-Stunden-Day-ahead-Preiskurve (Felder dokumentiert in [`data/README.md`](./data/README.md))
-- [`data/prices.csv`](./data/prices.csv): dieselben Daten, bequem in Excel/Sheets zu öffnen
-- [`data/examples/`](./data/examples/): 3 Beispiel-Verbrauchsprofile als Ausgangspunkt
 
-> ⚠️ Synthetisch / vereinfacht, Stand 2026-06, keine offizielle AI:AT-Position. Kein Domänenwissen nötig: die Preiskurve und die Profile sind selbsterklärend. *(Business-Rolle: die Markt-/Preis-Zahlen fürs Sizing stecken nicht in den Daten, die recherchierst du frei, siehe deinen Brief.)*
+```
 
-## Das Wichtigste in Kürze
 
-- **Aufwand:** ~4–6 fokussierte Stunden. Du hast 7 Kalendertage ab Erhalt; das Fenster ist für *Flexibilität*, nicht zum Durchgrinden.
-- **KI:** Nutze jede KI, jede Library, google frei. Das wird erwartet, nicht nur erlaubt.
-- **Abgabe:** per E-Mail an aiandbusinessgrowth@ai-at.eu. Für deinen Code/deine Doku erstellst du ein eigenes Repo (z. B. `git init` in deinem Arbeitsordner, oder dieses Repo als Vorlage klonen und zu deinem GitHub/GitLab pushen) und schickst uns den Link. Die konkreten Daten (Abgabedatum, ggf. Upload-Link) stehen in deiner Begleit-E-Mail.
-- **Bewertung:** transparent. Die Gewichtung findest du in deinem Rollen-Brief.
-- **Wichtig:** Ein rauer Kern mit klarem Denken schlägt eine polierte, oberflächliche Umsetzung. Mehr Stunden bedeuten bei uns nicht mehr Punkte.
+## 🧠 Decision Log & AI Collaboration
 
-## Fair und transparent
+**Decisions & Trade-offs:**
+* **Ambiguity & Realism:** Implemented a Dual-Mode Math Engine (Continuous vs. Discrete) and Dual Baseline Calculation (Average vs. APCS) to accurately reflect diverse SME operations, trading code simplicity for highly flexible, realistic cost estimation.
+* **UX vs. Strict Schemas:** Designed a Dynamic Working Hours & Fallback Pattern where CLI flags smoothly override JSON defaults, prioritizing a fast user experience without polluting the required raw data schemas.
+* **Actionable Presentation:** Built a visually decoupled UI (Pre-attentive Sparklines & Alerts). This required pausing development to manually extract all Pandas logic out of the presentation layer, trading immediate feature velocity for a strictly testable MVC architecture.
 
-AI Factory Austria steht für Chancengleichheit. Ob Uni, Bootcamp oder self-taught: es zählt, *wie* du denkst und mit KI arbeitest. Brauchst du Unterstützung oder Anpassungen im Prozess, sag uns Bescheid. Die Challenge ist unbezahlt. Dafür zeigen wir dir nach dem Debrief unsere eigene Lösung (mit echten Entscheidungen, Prompts und Trade-offs) und geben jeder und jedem strukturiertes, ehrliches Feedback. Kein Ghosting, nie.
 
-> Was du hier nicht findest, ist unsere eigene Referenzlösung. Die heben wir bewusst für den gemeinsamen Debrief auf, damit du frei und ohne Anchoring an die Aufgabe gehst.
+## 🛠 Usage Examples
 
-*AI:AT Hiring Team*
+Once installed, you can use the CLI tool flexibly:
+
+```bash
+# Basic execution (uses default profile data from JSON)
+strom-waechter 1
+
+# Example: Continuous process overriding specific working hours
+strom-waechter 4 --working-hours "06:00-18:00"
+
+# Example: Discrete (non-consecutive) hours using the APCS baseline
+strom-waechter 5 --discrete --baseline apcs
+
+```
+
+**🔑 Key AI Prompts that made the difference:**
+
+**1. Strategic Planning & Alignment**
+Prevented premature code generation and hallucination by forcing architectural discussions before implementation.
+> *"Let's continue to phase 3... Don't write any code yet, let's discuss it first."*
+
+**2. Enforcing Clean Architecture**
+Rejected AI shortcuts like hardcoded values and monolithic scripts, enforcing the Single Responsibility Principle and dynamic, data-driven solutions.
+> *"This function is misleading. Each workspace has its own working hours and we should integrate it and not use magic numbers."*
+> *"These are again massive functions. Let's chunk them... we should divide it to smaller helper functions."*
+
+**3. Strict Workflow & State Control**
+Established rigorous development hygiene, stopping the AI from rushing ahead to guarantee that testing, debugging, and version control were secured sequentially.
+> *"Regarding our workflow... 1. We design the code... 6. Update git 7. Only then continue to the code of the next phase."*
+
+## 🧪 Tests
+
+This project deliberately avoids external testing dependencies (like Pytest) and utilizes Python's native `unittest` module to ensure zero-dependency reliability across different environments.
+
+```bash
+python -m unittest discover dev/tests -v
+
+```

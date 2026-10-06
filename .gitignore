@@ -22,3 +22,6 @@ Thumbs.db
 # Orchestrator / interne Tooling-Artefakte
 .orchestrator/
 .claude/
+
+# Ignore raw energy market datasets
+data/baselines/synthload2027/

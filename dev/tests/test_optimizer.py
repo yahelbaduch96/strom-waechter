@@ -81,9 +81,6 @@ class TestOptimizer(unittest.TestCase):
         self.df = pd.DataFrame(data).set_index('ts')
 
     def test_standard_rolling_window(self):
-        # Note: Because find_optimal_window calls validate_profile_inputs internally, 
-        # we now need to mock validate_profile_inputs or skip it for pure math tests.
-        # But for now, we will see how it fails!
         result = find_optimal_window(self.df, flex_hours=2, load_kwh=10.0)
         self.assertEqual(result['optimal_avg_price'], 2.5)
         self.assertEqual(result['start_ts'], pd.to_datetime('2026-06-08T02:00:00'))

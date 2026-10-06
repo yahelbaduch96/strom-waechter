@@ -16,42 +16,61 @@ python -m venv .venv
 source .venv/bin/activate  # Mac/Linux
 # .venv\Scripts\activate   # Windows
 
-# 3. Install the tool (automatically installs dependencies like Pandas & Rich)
+# 3. Install the tool 
 pip install -e .
-
-# 4. Run the tool!
-strom-waechter 1
-
-
-*For a full list of available options, run: `strom-waechter --help`
-
 
 ```
 
+## 📂 Project Structure
 
-## 🧠 Decision Log & AI Collaboration
+The repository follows a strict 4-layer MVC architecture to decouple data processing from presentation:
+* **`dev/`**: Core application code and modules.
+  * `strom_waechter.py`: The Math Engine and main CLI controller.
+  * `ui.py`: The presentation layer (pure "paint" layer).
+  * `extract_apcs.py`: Utility script used to process standard load profiles.
+  * `tests/`: Unit tests using Python's native `unittest`.
+* **`data/`**: Inputs, price datasets, and SME profiles.
+  * `examples/profil_*.json`: Example profiles for energy-intensive SMEs.
+  * `baselines/slp_weights.json`: Austrian Standard Load Profile (SLP) weight vectors (APCS data).
+* **`pyproject.toml`**: The build and dependency configuration that packages the CLI globally.
 
-**Decisions & Trade-offs:**
-* **Ambiguity & Realism:** Implemented a Dual-Mode Math Engine (Continuous vs. Discrete) and Dual Baseline Calculation (Average vs. APCS) to accurately reflect diverse SME operations, trading code simplicity for highly flexible, realistic cost estimation.
-* **UX vs. Strict Schemas:** Designed a Dynamic Working Hours & Fallback Pattern where CLI flags smoothly override JSON defaults, prioritizing a fast user experience without polluting the required raw data schemas.
-* **Actionable Presentation:** Built a visually decoupled UI (Pre-attentive Sparklines & Alerts). This required pausing development to manually extract all Pandas logic out of the presentation layer, trading immediate feature velocity for a strictly testable MVC architecture.
 
+## 🛠 Usage & CLI Arguments
 
-## 🛠 Usage Examples
+Once installed, use the `strom-waechter` command followed by a profile ID.
 
-Once installed, you can use the CLI tool flexibly:
+### Available Arguments:
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `profile` | Positional | The ID of the profile to load (e.g., `1`, `4`). |
+| `--prices` | Optional | Path to a custom prices JSON file. |
+| `--working-hours` | Optional | Override the shift constraints (e.g., `"06:00-18:00"`). |
+| `--discrete` | Flag | Finds the cheapest *non-consecutive* hours instead of a rolling block. |
+| `--baseline` | Optional | Baseline comparison method: `average` (default) or `apcs`. |
+
+### Examples:
 
 ```bash
-# Basic execution (uses default profile data from JSON)
+# Basic execution (uses default profile data)
 strom-waechter 1
 
-# Example: Continuous process overriding specific working hours
+# Continuous process overriding specific working hours
 strom-waechter 4 --working-hours "06:00-18:00"
 
-# Example: Discrete (non-consecutive) hours using the APCS baseline
+# Discrete (non-consecutive) hours using the APCS baseline
 strom-waechter 5 --discrete --baseline apcs
 
 ```
+
+## 🧠 Decision Log & AI Collaboration
+
+**Key Architecture Decisions:**
+
+* **Continuous vs. Discrete:** The math engine supports both contiguous rolling windows (e.g., for ovens) and independent discrete hours (e.g., for pumps) to reflect real SME operations.
+* **Dynamic Fallbacks:** CLI flags smoothly override JSON profile defaults, prioritizing a fast user experience without polluting the required raw data schemas.
+* **Strict MVC Compliance & Separation of Concerns:** To ensure enterprise-grade maintainability, data processing and presentation are cleanly decoupled. All Pandas data manipulation, rolling windows, and calculations are strictly handled within the Math Engine layer. The UI presentation module (`ui.py`) operates as a pure "paint" layer—performing zero calculations and only receiving pre-calculated primitive dictionaries.
+* **Defensive Input Validation & Error Handling:** Explicit input checking is enforced before execution. The engine validates data types, handles boundary conditions, and provides clear, actionable user feedback and fallbacks for missing configurations or malformed inputs.
 
 **🔑 Key AI Prompts that made the difference:**
 
@@ -68,11 +87,11 @@ Rejected AI shortcuts like hardcoded values and monolithic scripts, enforcing th
 Established rigorous development hygiene, stopping the AI from rushing ahead to guarantee that testing, debugging, and version control were secured sequentially.
 > *"Regarding our workflow... 1. We design the code... 6. Update git 7. Only then continue to the code of the next phase."*
 
+
 ## 🧪 Tests
 
 This project deliberately avoids external testing dependencies (like Pytest) and utilizes Python's native `unittest` module to ensure zero-dependency reliability across different environments.
 
 ```bash
 python -m unittest discover dev/tests -v
-
 ```

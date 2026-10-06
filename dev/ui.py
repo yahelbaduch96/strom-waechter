@@ -84,23 +84,16 @@ def _build_prompt_panel(blocks: list, mode: str):
     return Panel(f"[bold green]{prompt_text}[/bold green]", border_style="green")
 
 
-def _build_ability_panel(hourly_prices: dict, blocks: list):
+def _build_ability_panel(hourly_prices: dict, blocks: list, working_hours: dict = None):
     """Builds the sparkline context and shift prep alerts."""
     sparkline = _generate_sparkline(hourly_prices, blocks)
     ability_text = Text.from_markup(f"24-Hour Market Context (Green = Target, Red = Peak Penalty):\n{sparkline}\n")
-    
-    start_hour = blocks[0]['start'].hour
-    if start_hour < 6 or start_hour > 20:
-        ability_text.append("\n[!] Shift Prep Alert: ", style="bold yellow")
-        ability_text.append("Optimal start is outside standard day hours. Pre-load equipment before shift end.")
-        
+            
     return Panel(ability_text, border_style="blue")
 
 
 def _build_motivation_table(result: dict, response: dict):
     """Builds the economic feedback table."""
-    
-
     table = Table(show_header=False, box=None)
     table.add_column("Metric", style="dim")
     table.add_column("Value", justify="right")
@@ -117,14 +110,19 @@ def _print_report(response: dict):
     """Orchestrates the modular UI components for the final report."""
     console = Console()
     result = response["data"]
-    hourly_prices = response["raw_df"]
+    df = response["raw_df"]
     mode = response["mode"]
     blocks = result["scheduled_blocks"]
+    working_hours = response.get("working_hours", None)
     
     # Header
-    console.print(f"\n[bold white]STROM-WÄCHTER[/bold white] | {response['profile_name'].upper()} ({response['branche']}) | {mode}\n")
+    if working_hours:
+        wh_str = f" | Working Hours: {working_hours['start']} – {working_hours['end']}"
+    else:
+        wh_str = ""
+    console.print(f"\n[bold white]STROM-WÄCHTER[/bold white] | {response['profile_name'].upper()} ({response['branche']}) | {mode} {wh_str}\n")
     
     # Orchestrated Components
     console.print(_build_prompt_panel(blocks, mode))
-    console.print(_build_ability_panel(hourly_prices, blocks))
+    console.print(_build_ability_panel(df, blocks, working_hours))
     console.print(_build_motivation_table(result, response))

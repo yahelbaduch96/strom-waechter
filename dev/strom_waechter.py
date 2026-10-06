@@ -196,17 +196,19 @@ def find_optimal_window(df: pd.DataFrame, flex_hours: int, load_kwh: float, work
 # ==========================================
 def _parse_working_hours(cli_working_hours: str, profile: dict) -> dict:
     """Merges working hours, prioritizing CLI input over JSON profile."""
-    if cli_working_hours:
+    working_hours = cli_working_hours or profile.get("working_hours")
+    if working_hours:
         try:
-            start, end = cli_working_hours.split('-')
+            start, end = working_hours.split('-')
             return {"start": start.strip(), "end": end.strip()}
         except ValueError:
             raise ValueError("Invalid --working-hours format. Use HH:MM-HH:MM")
-    return profile.get("working_hours")
-
+    
+    return None
+    
 def _resolve_apcs_weights(cli_baseline: str, profile: dict) -> list:
     """Dynamically determines APCS weights by mapping the profile industry to the Kategorien data."""
-    baseline_type = cli_baseline or profile.get("baseline", "average")
+    baseline_type = cli_baseline or profile.get("default_baseline", "average")
     
     if baseline_type.lower() == "apcs":
         apcs_data = load_apcs_weights()
@@ -238,7 +240,7 @@ def execute_optimization_pipeline(
     cli_discrete: bool = False,
     cli_baseline: str = None
 ) -> dict:
-    """Bridges I/O and domain logic, translating Python exceptions into API-friendly dict responses."""
+    """Bridges I/O and domain logic, translating Python exceptions into dict responses."""
     try:
         # 1. Load Data
         profile_path = resolve_profile_path(profile_identifier)
@@ -273,7 +275,8 @@ def execute_optimization_pipeline(
             "data": result,
             "mode": "Continuous" if is_continuous else "Discrete",
             "baseline_used": "APCS" if apcs_weights else "Daily Average",
-            "raw_df": hourly_prices_dict
+            "raw_df": hourly_prices_dict,
+            "working_hours": working_hours
         }
         
     # 6. Error Handling
@@ -305,6 +308,7 @@ def main():
         cli_discrete=args.discrete, 
         cli_baseline=args.baseline
     )
+    
 
     if response["status"] == "error":
         print(f"\n❌ Error: {response['message']}\n")

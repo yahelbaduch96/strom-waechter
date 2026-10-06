@@ -1,0 +1,11 @@
+{
+    "_hinweis": "synthetisch / vereinfacht, Stand 2026-06",
+    "branche": "b\u00e4ckerei mit backstube",
+    "verschiebbare_last_kwh": 120.5,
+    "flexibilitaet_stunden": 4,
+    "region": "Wien",
+    "bundesland": "Wien",
+    "working_hours": "04:00-16:00",
+    "continuous_process": false,
+    "default_baseline": "apcs"
+}

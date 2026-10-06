@@ -25,3 +25,8 @@ Thumbs.db
 
 # Ignore raw energy market datasets
 data/baselines/synthload2027/
+
+# Python Packaging / Build Artifacts
+*.egg-info/
+build/
+dist/

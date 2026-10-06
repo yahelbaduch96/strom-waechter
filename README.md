@@ -59,7 +59,7 @@ strom-waechter 1
 strom-waechter 4 --working-hours "06:00-18:00"
 
 # Discrete (non-consecutive) hours using the APCS baseline
-strom-waechter 5 --discrete --baseline apcs
+strom-waechter 2 --discrete --baseline apcs
 
 ```
 

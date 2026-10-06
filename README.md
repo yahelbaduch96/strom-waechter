@@ -32,6 +32,7 @@ pip install -e .
   * `examples/profil_*.json`: Example profiles for energy-intensive SMEs.
   * `baselines/slp_weights.json`: Austrian Standard Load Profile (SLP) weight vectors (APCS data).
 * **`pyproject.toml`**: The build and dependency configuration that packages the CLI globally.
+* **`code_review.md`**: The code review for Phase B
 
 
 ## 🛠 Usage & CLI Arguments

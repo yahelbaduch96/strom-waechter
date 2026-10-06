@@ -64,7 +64,7 @@ strom-waechter 2 --discrete --baseline apcs
 
 ## 🧪 Tests
 
-This project deliberately avoids external testing dependencies (like Pytest) and utilizes Python's native `unittest` module to ensure zero-dependency reliability across different environments.
+This project utilizes Python's native `unittest` module.
 
 ```bash
 python -m unittest discover dev/tests -v

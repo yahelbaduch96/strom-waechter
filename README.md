@@ -23,7 +23,6 @@ pip install -e .
 
 ## 📂 Project Structure
 
-The repository follows a strict 4-layer MVC architecture to decouple data processing from presentation:
 * **`dev/`**: Core application code and modules.
   * `strom_waechter.py`: The Math Engine and main CLI controller.
   * `ui.py`: The presentation layer (pure "paint" layer).

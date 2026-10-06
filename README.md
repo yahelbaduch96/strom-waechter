@@ -62,6 +62,15 @@ strom-waechter 2 --discrete --baseline apcs
 
 ```
 
+## 🧪 Tests
+
+This project deliberately avoids external testing dependencies (like Pytest) and utilizes Python's native `unittest` module to ensure zero-dependency reliability across different environments.
+
+```bash
+python -m unittest discover dev/tests -v
+```
+
+
 ## 🧠 Decision Log & AI Collaboration
 
 **Key Architecture Decisions:**
@@ -87,10 +96,6 @@ Established rigorous development hygiene, stopping the AI from rushing ahead to 
 > *"Regarding our workflow... 1. We design the code... 6. Update git 7. Only then continue to the code of the next phase."*
 
 
-## 🧪 Tests
-
-This project deliberately avoids external testing dependencies (like Pytest) and utilizes Python's native `unittest` module to ensure zero-dependency reliability across different environments.
-
-```bash
-python -m unittest discover dev/tests -v
-```
+## ⏱️ Approximate Working Hours
+**Total time spent: ~8 hours**
+While the core math engine was generated relatively fast using AI, the majority of the time was invested in architectural planning, implementing new features while enforcing separation of code, writing tests, and packaging the CLI.

@@ -43,18 +43,17 @@ class TestPresentationLayer(unittest.TestCase):
 
     def test_generate_sparkline_tagging(self):
         """Ensures optimal blocks are tagged green and peak blocks are tagged red."""
-        # Build a fake 24-hour dataset
-        dates = pd.date_range("2023-01-01 00:00", "2023-01-01 23:00", freq="h")
+        # Build a simple dictionary of 24 hourly prices instead of a DataFrame
         prices = [0.10] * 24
         prices[18] = 0.50 # Artificial peak hour
         prices[4] = 0.05  # Artificial optimal hour
         
-        df = pd.DataFrame({"preis_eur_kwh": prices}, index=dates)
+        hourly_prices = {i: prices[i] for i in range(24)}
         
         # Schedule the machine during the cheapest hour
-        blocks = [{"start": dates[4], "end": dates[5]}]
+        blocks = [{"start": datetime(2023, 1, 1, 4, 0), "end": datetime(2023, 1, 1, 5, 0)}]
         
-        sparkline = _generate_sparkline(df, blocks)
+        sparkline = _generate_sparkline(hourly_prices, blocks)
         
         # Assertions
         self.assertIn("[bold green]", sparkline, "Sparkline failed to highlight the target window in green.")

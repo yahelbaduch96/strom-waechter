@@ -5,14 +5,14 @@ from rich.panel import Panel
 from rich.table import Table
 
 
-def _generate_sparkline(df: pd.DataFrame, scheduled_blocks: list) -> str:
+def _generate_sparkline(hourly_prices: dict, scheduled_blocks: list) -> str:
     """Generates a 24-hour ASCII sparkline highlighting optimal and peak hours."""
-    hourly_prices = df['preis_eur_kwh'].groupby(df.index.hour).mean()
-    
     chars = ["_", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
-    min_val, max_val = hourly_prices.min(), hourly_prices.max()
+    
+    # Calculate min and max directly from the dictionary values
+    min_val, max_val = min(hourly_prices.values()), max(hourly_prices.values())
     val_range = max_val - min_val if max_val > min_val else 1
-    peak_threshold = max_val - (val_range * 0.20) # Top 20% are peak penalty hours
+    peak_threshold = max_val - (val_range * 0.20) 
     
     scheduled_hours = set()
     for block in scheduled_blocks:
@@ -22,17 +22,17 @@ def _generate_sparkline(df: pd.DataFrame, scheduled_blocks: list) -> str:
             scheduled_hours.update(range(start_h, end_h))
         elif start_h == end_h:
             scheduled_hours.add(start_h)
-        else: # Handles midnight wraparound
+        else:
             scheduled_hours.update(range(start_h, 24))
             scheduled_hours.update(range(0, end_h))
 
     sparkline = []
     for hour in range(24):
+        # Fetch directly from the dictionary
         price = hourly_prices.get(hour, min_val)
         char_idx = int(((price - min_val) / val_range) * 7)
         char = chars[max(0, min(7, char_idx))]
         
-        # Pre-attentive highlighting
         if hour in scheduled_hours:
             sparkline.append(f"[bold green]{char}[/bold green]")
         elif price >= peak_threshold:
@@ -84,10 +84,9 @@ def _build_prompt_panel(blocks: list, mode: str):
     return Panel(f"[bold green]{prompt_text}[/bold green]", border_style="green")
 
 
-def _build_ability_panel(df, blocks: list):
+def _build_ability_panel(hourly_prices: dict, blocks: list):
     """Builds the sparkline context and shift prep alerts."""
-
-    sparkline = _generate_sparkline(df, blocks)
+    sparkline = _generate_sparkline(hourly_prices, blocks)
     ability_text = Text.from_markup(f"24-Hour Market Context (Green = Target, Red = Peak Penalty):\n{sparkline}\n")
     
     start_hour = blocks[0]['start'].hour
@@ -118,7 +117,7 @@ def _print_report(response: dict):
     """Orchestrates the modular UI components for the final report."""
     console = Console()
     result = response["data"]
-    df = response["raw_df"]
+    hourly_prices = response["raw_df"]
     mode = response["mode"]
     blocks = result["scheduled_blocks"]
     
@@ -127,5 +126,5 @@ def _print_report(response: dict):
     
     # Orchestrated Components
     console.print(_build_prompt_panel(blocks, mode))
-    console.print(_build_ability_panel(df, blocks))
+    console.print(_build_ability_panel(hourly_prices, blocks))
     console.print(_build_motivation_table(result, response))

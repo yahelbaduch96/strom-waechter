@@ -262,7 +262,9 @@ def execute_optimization_pipeline(
             is_continuous=is_continuous,
             apcs_weights=apcs_weights
         )
-        
+
+        hourly_prices_dict = df_prices['preis_eur_kwh'].groupby(df_prices.index.hour).mean().to_dict()
+
         # 5. Return Unified Payload
         return {
             "status": "success",
@@ -271,7 +273,7 @@ def execute_optimization_pipeline(
             "data": result,
             "mode": "Continuous" if is_continuous else "Discrete",
             "baseline_used": "APCS" if apcs_weights else "Daily Average",
-            "raw_df": df_prices
+            "raw_df": hourly_prices_dict
         }
         
     # 6. Error Handling

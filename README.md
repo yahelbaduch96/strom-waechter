@@ -8,7 +8,7 @@ This project uses modern Python packaging (`pyproject.toml`). No manual script-p
 
 ```bash
 # 1. Clone the repository and navigate into the directory
-git clone <your-repo-link>
+git clone https://github.com/yahelbaduch96/strom-waechter.git
 cd strom-waechter
 
 # 2. Create and activate a virtual environment

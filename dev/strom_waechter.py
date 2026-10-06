@@ -1,8 +1,10 @@
 import os
 import argparse
-import json
 import sys
+import json
 import pandas as pd
+
+from ui import _print_report
 
 
 # ==========================================
@@ -268,10 +270,11 @@ def execute_optimization_pipeline(
             "branche": profile.get('branche', 'Unknown'),
             "data": result,
             "mode": "Continuous" if is_continuous else "Discrete",
-            "baseline_used": "APCS" if apcs_weights else "Daily Average"
+            "baseline_used": "APCS" if apcs_weights else "Daily Average",
+            "raw_df": df_prices
         }
         
-    # 6. Graceful Error Handling
+    # 6. Error Handling
     except FileNotFoundError as e:
         return {"status": "error", "type": "file_not_found", "message": str(e)}
     except json.JSONDecodeError as e:
@@ -282,27 +285,6 @@ def execute_optimization_pipeline(
         return {"status": "error", "type": "constraint_error", "message": str(e)}
     except Exception as e:
         return {"status": "error", "type": "unknown_error", "message": str(e)}
-
-
-# ==========================================
-# LAYER 4: PRESENTATION (CLI)
-# ==========================================
-def _print_report(response: dict):
-    """Formats and prints the successful optimization report to the terminal."""
-    print(f"Loading data for {response['profile_name']}...")
-    result = response["data"]
-    
-    print("\n--- STROM-WÄCHTER REPORT ---")
-    print(f"Industry: {response['branche']}")
-    print(f"Process Mode: {response['mode']}")
-    
-    print("\nOptimal Scheduled Blocks:")
-    for block in result['scheduled_blocks']:
-        print(f"  • {block['start'].strftime('%H:%M')} - {block['end'].strftime('%H:%M')}")
-        
-    print(f"\nAvg Price in Schedule: {result['optimal_avg_price']:.4f} EUR/kWh")
-    print(f"Baseline ({response['baseline_used']}): {result['baseline_avg_price']:.4f} EUR/kWh")
-    print(f"Estimated Savings: {result['savings_eur']:.2f} EUR ({result['savings_percent']:.1f}%)")
 
 
 def main():
@@ -327,7 +309,6 @@ def main():
         sys.exit(1)
 
     _print_report(response)
-
 
 if __name__ == "__main__":
     main()

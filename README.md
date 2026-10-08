@@ -19,6 +19,9 @@ source .venv/bin/activate  # Mac/Linux
 # 3. Install the tool 
 pip install -e .
 
+# 4. Launch the web application
+streamlit run app.py
+
 ```
 
 ## 📂 Project Structure

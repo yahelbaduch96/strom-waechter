@@ -5,16 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "strom-waechter"
 version = "1.0.0"
-description = "AI Developer Challenge: Energy cost optimization CLI"
+description = "Industrial Energy Cost Optimization Web Application"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "pandas>=2.0.0",
-    "rich>=13.7.0"
+    "streamlit>=1.30.0",
+    "plotly>=5.18.0"
 ]
 
-[project.scripts]
-strom-waechter = "dev.strom_waechter:main"
-
 [tool.setuptools]
-packages = ["dev"]
+packages = ["."]

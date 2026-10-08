@@ -39,17 +39,21 @@ st.title("Strom-Wächter Optimizer")
 # STAGE 1: START PAGE
 # ==========================================
 if st.session_state['app_stage'] == 'start':
+    st.markdown("## Welcome to the Industrial Energy Optimizer")
+    
+    st.markdown("#### **Strom-Wächter helps your business effortlessly cut energy costs.**")
+    
     st.markdown("""
-    ### Welcome to the Industrial Energy Optimizer
+    By analyzing daily electricity prices, the tool automatically finds the most cost-effective times to run your high-energy machinery. 
     
-    Strom-Wächter helps your business effortlessly cut energy costs. It checks daily electricity prices and automatically finds the cheapest times to run your high-energy machinery. 
-    
-    Whether your equipment needs to run continuously in one go (like an industrial oven) or can be paused and restarted throughout the day (like a water pump), this tool builds a schedule that fits perfectly within your staff's actual working hours.
+    * **Cost Minimization:** Maps your total energy load against the cheapest available market hours.
+    * **Flexible Operation:** Adapts to continuous running blocks (like industrial ovens) or pausable operations (like water pumps).
+    * **Shift Alignment:** Builds schedules that strictly fit within your staff's actual working hours.
     """)
+    
     st.divider()
     
-    # Added type="primary" so it picks up the green theme
-    if st.button("Start Optimization", type="primary", use_container_width=True):
+    if st.button("Start Optimization", type="primary", width='stretch'):
         st.session_state['app_stage'] = 'setup'
         st.rerun()
 
@@ -76,22 +80,30 @@ elif st.session_state['app_stage'] == 'setup':
             gen_region = st.selectbox("Region", options=["AT", "DE"], help="The country where your business is located.")
             gen_bundesland = st.text_input("State", value="Wien", help="Your specific state or province.")
         with c2:
-            gen_window = st.slider("Running Time (Hours)", 1, 24, 5, help="How many hours the machine needs to run to finish its task.")
-            
             use_wh = st.checkbox("Limit Working Hours", help="Check this if the machine can only run while staff are present.")
+            max_window = 24
+            gen_working_hours = None
+            
             if use_wh:
                 wh_col1, wh_col2 = st.columns(2)
                 start_time = wh_col1.time_input("Start Time", value=time(8, 0))
                 end_time = wh_col2.time_input("End Time", value=time(16, 0))
                 gen_working_hours = f"{start_time.strftime('%H:%M')}-{end_time.strftime('%H:%M')}"
-            else:
-                gen_working_hours = None
+                
+                # Calculate shift duration to cap the slider
+                duration = (end_time.hour + end_time.minute / 60.0) - (start_time.hour + start_time.minute / 60.0)
+                if duration <= 0: # Handle overnight shifts
+                    duration += 24
+                max_window = max(1, int(duration))
+
+            # Slider dynamically adjusts its maximum value based on the working hours
+            gen_window = st.slider("Flexible Hours", 1, max_window, min(5, max_window), help="How many hours the machine needs to run to finish its task.")
 
         with c3:
             gen_mode = st.radio("Operation Type", ["Continuous", "Discrete"], help="Choose 'Continuous' if the machine cannot be stopped once started. Choose 'Discrete' if it can be paused and restarted later.")
             gen_baseline = st.selectbox("Standard Comparison", ["Average", "Industry Standard"], help="How we calculate your standard costs: 'Average' uses a flat daily rate, while 'Industry Standard' looks at typical usage patterns for your sector.")
             
-        if st.button("Proceed to Results", type="primary", use_container_width=True):
+        if st.button("Proceed to Results", type="primary", width='stretch'):
             st.session_state['active_profile'] = {
                 "branche": gen_branche.lower(),
                 "region": gen_region,
@@ -112,7 +124,7 @@ elif st.session_state['app_stage'] == 'setup':
             try:
                 temp_profile = json.load(uploaded_file)
                 st.success("File loaded successfully. You can now view the results.")
-                if st.button("Proceed to Results", key="proceed_json", type="primary", use_container_width=True):
+                if st.button("Proceed to Results", key="proceed_json", type="primary", width='stretch'):
                     st.session_state['active_profile'] = temp_profile
                     st.session_state['app_stage'] = 'results'
                     st.rerun()
@@ -137,17 +149,8 @@ elif st.session_state['app_stage'] == 'results':
     
     curr_wh = profile.get("working_hours")
 
-    if apcs_data and "mapping" in apcs_data:
-        sidebar_industry_options = [k.title() for k in apcs_data["mapping"].keys()]
-    else:
-        sidebar_industry_options = ["Gewerbe Allgemein", "Bäckerei", "Metallverarbeitung"]
-    if curr_branche not in sidebar_industry_options:
-        sidebar_industry_options.append(curr_branche)
-
-    new_branche = st.sidebar.selectbox("Industry", sidebar_industry_options, index=sidebar_industry_options.index(curr_branche), key="sb_ind")
     new_load = st.sidebar.number_input("Total Energy Needed (kWh)", min_value=1.0, value=curr_load, step=10.0, key="sb_load")
-    new_window = st.sidebar.slider("Running Time (Hours)", 1, 24, curr_window, key="sb_win")
-    
+        
     # --- SIDEBAR WORKING HOURS ---
     default_start, default_end = time(8, 0), time(16, 0)
     if curr_wh:
@@ -159,22 +162,33 @@ elif st.session_state['app_stage'] == 'results':
             pass
 
     use_wh_sidebar = st.sidebar.checkbox("Limit Working Hours", value=bool(curr_wh), key="sb_use_wh")
+    max_sidebar_window = 24
+    
     if use_wh_sidebar:
         new_start = st.sidebar.time_input("Start Time", value=default_start, key="sb_start")
         new_end = st.sidebar.time_input("End Time", value=default_end, key="sb_end")
         new_wh = f"{new_start.strftime('%H:%M')}-{new_end.strftime('%H:%M')}"
+        
+        # Calculate shift duration to cap the slider
+        duration = (new_end.hour + new_end.minute / 60.0) - (new_start.hour + new_start.minute / 60.0)
+        if duration <= 0:
+            duration += 24
+        max_sidebar_window = max(1, int(duration))
     else:
         new_wh = None
+
+    # Safely cap the current window if the user shrinks their working hours
+    safe_curr_window = min(curr_window, max_sidebar_window)
+    new_window = st.sidebar.slider("Flexible Hours", 1, max_sidebar_window, safe_curr_window, key="sb_win")
 
     new_mode = st.sidebar.radio("Operation Type", ["Continuous", "Discrete"], index=0 if curr_mode=="Continuous" else 1, key="sb_mode")
     new_baseline = st.sidebar.selectbox("Standard Comparison", ["Average", "Industry Standard"], index=0 if curr_baseline=="Average" else 1, key="sb_base")
     
     st.sidebar.divider()
-    if st.sidebar.button("Start Over", type="primary", use_container_width=True):
+    if st.sidebar.button("Start Over", type="primary", width='stretch'):
         st.session_state['app_stage'] = 'setup'
         st.rerun()
 
-    profile["branche"] = new_branche.lower()
     profile["verschiebbare_last_kwh"] = new_load
     profile["flexibilitaet_stunden"] = new_window
     profile["continuous_process"] = (new_mode == "Continuous")
@@ -219,20 +233,13 @@ elif st.session_state['app_stage'] == 'results':
             
             written_hours_str = _format_hours(data["scheduled_blocks"])
             
-            st.success(f"**Best Time to Run the Machine:** {written_hours_str}")
-
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("Optimized Cost", f"€{data['optimal_avg_price'] * profile['verschiebbare_last_kwh']:.2f}")
             m2.metric("Standard Cost", f"€{data['baseline_avg_price'] * profile['verschiebbare_last_kwh']:.2f}")
             m3.metric("Money Saved", f"€{data['savings_eur']:.2f}")
             m4.metric("Savings %", f"{data['savings_percent']:.1f}%")
 
-            with st.expander("How are these values calculated?"):
-                st.markdown(f"""
-                * **Optimized Cost:** The total price you will pay if you run the machine exactly during the recommended {new_window} hours shown above.
-                * **Standard Cost:** What you would typically pay on an average day if you did not use this tool to schedule the machine.
-                * **Money Saved:** The difference between your standard cost and the optimized cost.
-                """)
+            st.success(f"**Best Time to Run the Machine:** {written_hours_str}")
 
             # --- PROFILE EXTRACTION FOR VISUALIZATION ---
             weights_24h = [1.0] * 24
@@ -250,28 +257,78 @@ elif st.session_state['app_stage'] == 'results':
             # --- VISUALIZATION (DUAL AXIS) ---
             st.subheader("Price Overview & Schedule")
             vis_df = df_prices.head(48).copy()
+            
+            # STRIP TIMEZONE FOR PLOTLY COMPATIBILITY
+            if vis_df.index.tz is not None:
+                vis_df.index = vis_df.index.tz_localize(None)
+                
             vis_df['consumption_weight'] = vis_df.index.hour.map(lambda h: weights_24h[h])
             
             fig = make_subplots(specs=[[{"secondary_y": True}]])
+            max_price = vis_df['preis_eur_kwh'].max()
 
+            # Draw working hours shifted by 30 minutes to align with centered bar edges
+            if profile["working_hours"]:
+                s_str, e_str = profile["working_hours"].split("-")
+                s_time = datetime.strptime(s_str.strip(), "%H:%M").time()
+                e_time = datetime.strptime(e_str.strip(), "%H:%M").time()
+                
+                unique_dates = vis_df.index.normalize().unique()
+                for i, date in enumerate(unique_dates):
+                    shift_start = pd.Timestamp.combine(date.date(), s_time)
+                    shift_end = pd.Timestamp.combine(date.date(), e_time)
+                    
+                    if e_time < s_time: # Handle overnight shifts
+                        shift_end += pd.Timedelta(days=1)
+                        
+                    # Offset lines to perfectly match Plotly's visual bar boundaries
+                    vis_start = shift_start - pd.Timedelta(minutes=30)
+                    vis_end = shift_end - pd.Timedelta(minutes=30)
+                    
+                    if vis_start <= vis_df.index.max():
+                        fig.add_trace(go.Scatter(
+                            x=[vis_start, vis_start], y=[0, max_price],
+                            mode="lines", line=dict(color="#00A87B", width=2, dash="dash"),
+                            name="Shift Start", showlegend=(i == 0), hoverinfo="skip"
+                        ), secondary_y=False)
+                        
+                    if vis_end <= vis_df.index.max():
+                        fig.add_trace(go.Scatter(
+                            x=[vis_end, vis_end], y=[0, max_price],
+                            mode="lines", line=dict(color="#00A87B", width=2, dash="dash"),
+                            name="Shift End", showlegend=(i == 0), hoverinfo="skip"
+                        ), secondary_y=False)
+
+            # Grey Market Price Bars (Restored to default layout)
             fig.add_trace(go.Bar(
                 x=vis_df.index, y=vis_df['preis_eur_kwh'],
                 name="Market Price", marker_color="lightgrey",
                 hovertemplate="Time: %{x}<br>Price: €%{y:.4f}/kWh<extra></extra>"
             ), secondary_y=False)
             
-            optimal_x, optimal_y = [], []
+            # Create a matching full-length dataset for the green bars to inherit exact widths
+            import numpy as np
+            vis_df['optimal_price'] = np.nan
+            
             for block in data["scheduled_blocks"]:
-                mask = (vis_df.index >= block["start"]) & (vis_df.index < block["end"])
-                optimal_x.extend(vis_df.loc[mask].index)
-                optimal_y.extend(vis_df.loc[mask, 'preis_eur_kwh'])
+                b_start = pd.to_datetime(block["start"])
+                b_end = pd.to_datetime(block["end"])
+                
+                if b_start.tz is not None:
+                    b_start = b_start.tz_localize(None)
+                    b_end = b_end.tz_localize(None)
+                    
+                mask = (vis_df.index >= b_start) & (vis_df.index < b_end)
+                vis_df.loc[mask, 'optimal_price'] = vis_df.loc[mask, 'preis_eur_kwh']
 
+            # Green Optimal Bars
             fig.add_trace(go.Bar(
-                x=optimal_x, y=optimal_y,
+                x=vis_df.index, y=vis_df['optimal_price'],
                 name="Recommended Schedule", marker_color="#00CC96",
                 hovertemplate="<b>RECOMMENDED</b><br>Time: %{x}<br>Price: €%{y:.4f}/kWh<extra></extra>"
             ), secondary_y=False)
 
+            # Standard Usage Pattern Line
             fig.add_trace(go.Scatter(
                 x=vis_df.index, y=vis_df['consumption_weight'],
                 name=profile_label, mode="lines",
@@ -283,16 +340,29 @@ elif st.session_state['app_stage'] == 'results':
                 barmode="overlay", hovermode="x unified", margin=dict(t=30, b=0),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
+            fig.update_layout(
+                barmode="overlay", hovermode="x unified", margin=dict(t=30, b=0),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                barcornerradius=2  # Rounds the tops of the bars (can be a pixel integer or a string like "20%")
+            )
             fig.update_yaxes(title_text="Price (€/kWh)", secondary_y=False)
-            fig.update_yaxes(title_text="Standard Usage Pattern", showgrid=False, secondary_y=True)
+            fig.update_yaxes(title_text="Usage Pattern (kWh)", showgrid=False, secondary_y=True)
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
+
+            with st.expander("How are these values calculated?"):
+                            st.markdown(f"""
+                            * **Optimized Cost:** The total price you will pay if you run the machine exactly during the recommended {new_window} hours shown above.
+                            * **Standard Cost:** What you would typically pay on an average day if you did not use this tool to schedule the machine.
+                            * **Money Saved:** The difference between your standard cost and the optimized cost.
+                            """)
+            
 
             st.divider()
             st.subheader("Export Your Data")
             e1, e2 = st.columns(2)
             profile_json = json.dumps(profile, indent=4)
-            e1.download_button("Download Machine Settings", data=profile_json, file_name=f"settings_{profile['branche'].replace(' ', '_')}.json", mime="application/json", type="primary", use_container_width=True)
+            e1.download_button("Download Machine Settings", data=profile_json, file_name=f"settings_{profile['branche'].replace(' ', '_')}.json", mime="application/json", type="primary", width='stretch')
 
             def datetime_handler(x):
                 if isinstance(x, pd.Timestamp) or hasattr(x, 'isoformat'):
@@ -300,4 +370,4 @@ elif st.session_state['app_stage'] == 'results':
                 raise TypeError("Unknown format")
                 
             report_json = json.dumps(result, default=datetime_handler, indent=4)
-            e2.download_button("Download Full Report", data=report_json, file_name=f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", mime="application/json", type="primary", use_container_width=True)
+            e2.download_button("Download Full Report", data=report_json, file_name=f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", mime="application/json", type="primary", width='stretch')

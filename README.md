@@ -20,8 +20,7 @@ source .venv/bin/activate  # Mac/Linux
 pip install -e .
 
 # 4. Launch the web application
-streamlit run app.py
-
+streamlit run dev/app.py
 ```
 
 ## 📂 Project Structure
